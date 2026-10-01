@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#059669">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TabungRutin">
+    <title>TabungRutin - Smart Payment & Daily Savings Manager</title>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        emerald: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            800: '#065f46',
+                            900: '#064e3b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full flex flex-col transition-colors duration-200">
+
+    <header class="sticky top-0 z-30 bg-emerald-600 dark:bg-slate-800 text-white shadow-md border-b border-emerald-700/30 dark:border-slate-700">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white font-bold text-xl shadow-inner">
+                    <i class="fa-solid fa-piggy-bank"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold leading-tight">TabungRutin</h1>
+                    <p class="text-xs text-emerald-100 dark:text-slate-400">Pengingat & Tabungan Presisi</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- Alarm Status Indicator -->
+                <button onclick="openNotificationModal()" id="alarmStatusBadge" class="bg-emerald-700/60 dark:bg-slate-700 hover:bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition" title="Pengaturan Alarm & Notifikasi">
+                    <i class="fa-solid fa-clock text-amber-300"></i>
+                    <span id="alarmTimeDisplay" class="font-mono text-xs">07:00</span>
+                </button>
+
+                <!-- PWA Install Button -->
+                <button id="pwaInstallBtn" onclick="installPWA()" class="hidden bg-amber-400 hover:bg-amber-300 text-slate-900 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 shadow-md transition-all active:scale-95">
+                    <i class="fa-solid fa-download"></i>
+                    <span class="hidden sm:inline">Instal</span>
+                </button>
+
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" class="p-2 rounded-lg bg-emerald-700/50 dark:bg-slate-700 text-white hover:bg-emerald-700 dark:hover:bg-slate-600 transition-colors" title="Ubah Tema">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <!-- Options / Backup Modal Trigger -->
+                <button onclick="openBackupModal()" class="p-2 rounded-lg bg-emerald-700/50 dark:bg-slate-700 text-white hover:bg-emerald-700 dark:hover:bg-slate-600 transition-colors" title="Backup & Pengaturan">
+                    <i class="fa-solid fa-gear"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-6 space-y-6">
+
+        <!-- Urgent/Due Today Banner Alert -->
+        <div id="urgentAlertContainer" class="hidden">
+            <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex items-start gap-3.5 text-amber-900 dark:text-amber-200 shadow-sm">
+                <div class="p-2 bg-amber-500 text-white rounded-xl shadow-sm mt-0.5">
+                    <i class="fa-solid fa-bell animate-bounce"></i>
+                </div>
+                <div class="flex-grow">
+                    <h2 class="font-bold text-sm sm:text-base">Pengingat Pembayaran Hari Ini</h2>
+                    <p id="urgentAlertText" class="text-xs sm:text-sm text-amber-800 dark:text-amber-300 mt-0.5">Ada beberapa tagihan yang telah mencapai waktu pembayaran!</p>
+                </div>
+                <button onclick="scrollToUrgent()" class="text-xs bg-amber-500 hover:bg-amber-600 text-white font-semibold px-3 py-1.5 rounded-lg shadow-sm self-center whitespace-nowrap transition">
+                    Selesaikan
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Hero Card: Daily Target Calculation -->
+        <div class="bg-gradient-to-br from-emerald-600 to-teal-700 dark:from-emerald-800 dark:to-slate-800 rounded-2xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden">
+            <div class="absolute -right-6 -bottom-6 w-36 h-36 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 text-emerald-100 dark:text-emerald-200 text-xs font-bold uppercase tracking-wider">
+                        <i class="fa-solid fa-calculator"></i> Target Menabung Hari Ini (Dihitung Dinamis)
+                    </div>
+                    <div id="totalDailySavings" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+                        Rp 0
+                    </div>
+                    <p class="text-xs text-emerald-100/90 dark:text-slate-300 max-w-lg leading-relaxed">
+                        Nominal harian disesuaikan otomatis berdasarkan sisa hari hingga jatuh tempo untuk memastikan tabungan terkumpul 100% pas waktu bayar.
+                    </p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2.5">
+                    <button onclick="openFormModal()" class="bg-white text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-500 dark:text-white dark:hover:bg-emerald-400 font-bold px-4 py-3 rounded-xl shadow-md flex items-center justify-center gap-2 transition-transform active:scale-95 text-xs sm:text-sm">
+                        <i class="fa-solid fa-plus-circle text-base"></i>
+                        <span>Tambah Tagihan</span>
+                    </button>
+                    <button onclick="triggerManualAlarmCheck()" class="bg-emerald-700/80 hover:bg-emerald-800 text-white font-semibold px-3.5 py-3 rounded-xl border border-white/20 flex items-center justify-center gap-2 transition text-xs">
+                        <i class="fa-solid fa-bell"></i>
+                        <span>Tes Alarm</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <!-- Total Target -->
+            <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+                    <i class="fa-solid fa-vault text-emerald-600"></i> Total Target
+                </div>
+                <p id="totalEstimation" class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">Rp 0</p>
+            </div>
+
+            <!-- Total Terkumpul -->
+            <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+                    <i class="fa-solid fa-piggy-bank text-blue-500"></i> Terkumpul Saat Ini
+                </div>
+                <p id="totalCollectedAmount" class="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400">Rp 0</p>
+            </div>
+
+            <!-- Jatuh Tempo Hari Ini -->
+            <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+                    <i class="fa-solid fa-calendar-check text-amber-500"></i> Jatuh Tempo Hari Ini
+                </div>
+                <p id="dueTodayCount" class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">0 Tagihan</p>
+            </div>
+
+            <!-- Total Aktif -->
+            <div class="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm">
+                <div class="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1">
+                    <i class="fa-solid fa-layer-group text-indigo-500"></i> Total Items
+                </div>
+                <p id="totalItems" class="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100">0 Item</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Breakdown Chart -->
+            <div class="md:col-span-1 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col items-center justify-center">
+                <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 w-full text-left">Proporsi Tabungan Harian</h3>
+                <div class="w-full h-44 relative flex items-center justify-center">
+                    <canvas id="savingsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Filter and Actions -->
+            <div class="md:col-span-2 bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm flex flex-col justify-between gap-4">
+                <div>
+                    <h3 class="text-sm font-bold text-slate-800 dark:text-slate-100 mb-1">Kelola & Filter Tagihan Rutin</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Pantau sisa hari, kumpulkan tabungan, dan lunasi tagihan tepat waktu.</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-grow">
+                        <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="searchInput" oninput="renderApp()" placeholder="Cari uraian tagihan..." class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                    </div>
+                    <select id="filterFrequency" onchange="renderApp()" class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                        <option value="ALL">Semua Skala Waktu</option>
+                        <option value="365">Tahunan</option>
+                        <option value="30">Bulanan</option>
+                        <option value="7">Mingguan</option>
+                        <option value="1">Harian</option>
+                        <option value="CUSTOM">Custom</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700/50 text-xs text-slate-500">
+                    <span>Urutkan:</span>
+                    <div class="flex gap-2">
+                        <button onclick="setSort('dueDate')" id="sortDueDateBtn" class="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-800">
+                            Terdekat <i class="fa-solid fa-arrow-down-short-wide text-[10px]"></i>
+                        </button>
+                        <button onclick="setSort('dailyAmount')" id="sortDailyBtn" class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold">
+                            Tabungan Harian
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <div class="flex items-center justify-between px-1">
+                <h2 class="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-emerald-600 dark:text-emerald-400"></i>
+                    Daftar Pengeluaran & Progress Tabungan
+                </h2>
+                <span id="filteredCountBadge" class="text-xs bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 px-2.5 py-0.5 rounded-full font-medium">0 Tagihan</span>
+            </div>
+
+            <!-- List Card Container -->
+            <div id="paymentList" class="space-y-3.5">
+                <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden bg-white dark:bg-slate-800 rounded-2xl p-8 text-center border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="w-16 h-16 mx-auto mb-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center text-2xl">
+                    <i class="fa-solid fa-folder-open"></i>
+                </div>
+                <h3 class="font-bold text-slate-700 dark:text-slate-200 text-base">Belum Ada Tagihan Recorded</h3>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1 mb-4">Mulai tambahkan tagihan harian, mingguan, bulanan, atau tahunan Anda untuk menghitung alokasi tabungan presisi.</p>
+                <button onclick="openFormModal()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow transition">
+                    + Tambah Tagihan Pertama
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal Input / Edit Tagihan -->
+    <div id="formModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-200 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                <h3 id="modalTitle" class="font-bold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-emerald-600"></i> Tambah Tagihan
+                </h3>
+                <button onclick="closeFormModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="paymentForm" onsubmit="handleFormSubmit(event)" class="space-y-4 mt-4">
+                <input type="hidden" id="itemId">
+
+                <!-- Uraian -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Uraian / Nama Pengeluaran *</label>
+                    <input type="text" id="itemTitle" required placeholder="Contoh: Tagihan Listrik, Pajak Mobil, Arisan" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+
+                <!-- Estimasi Nominal -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Estimasi Total Biaya / Tagihan (Rp) *</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" id="itemAmount" required min="100" placeholder="600000" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+
+                <!-- Waktu Pembayaran Berikutnya -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tanggal Jatuh Tempo Berikutnya *</label>
+                    <input type="date" id="itemDueDate" required class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+
+                <!-- Skala Waktu / Frekuensi -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Skala Waktu (Daur / Siklus Berulang) *</label>
+                    <select id="itemFrequency" onchange="toggleCustomDaysInput()" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <option value="30">Bulanan (Berulang tiap 1 Bulan)</option>
+                        <option value="365">Tahunan (Berulang tiap 1 Tahun)</option>
+                        <option value="7">Mingguan (Berulang tiap 1 Minggu)</option>
+                        <option value="1">Harian (Berulang tiap Hari)</option>
+                        <option value="CUSTOM">Custom (Berapa Hari)</option>
+                    </select>
+                </div>
+
+                <!-- Custom Days Input -->
+                <div id="customDaysWrapper" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Jumlah Hari Siklus (N Hari) *</label>
+                    <input type="number" id="itemCustomDays" min="1" placeholder="Contoh: 100" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+
+                <!-- Initial Saved Amount -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Dana Terkumpul Saat Ini (Awal) (Rp)</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" id="itemSavedAmount" min="0" placeholder="0" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+
+                <!-- Dynamic Daily Target Preview -->
+                <div class="bg-emerald-50 dark:bg-emerald-950/40 p-3 rounded-xl border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between text-xs">
+                    <span class="text-emerald-800 dark:text-emerald-300 font-medium">Estimasi Target Tabungan Harian:</span>
+                    <span id="previewDailyAmount" class="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">Rp 0</span>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeFormModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition">
+                        Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Menabung Harian / Setor Tabungan -->
+    <div id="depositModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6 border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                <h3 class="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-piggy-bank text-emerald-600"></i> Setor Tabungan Harian
+                </h3>
+                <button onclick="closeDepositModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="depositForm" onsubmit="handleDepositSubmit(event)" class="space-y-4 mt-4">
+                <input type="hidden" id="depositItemId">
+
+                <div>
+                    <p id="depositItemTitle" class="font-bold text-slate-800 dark:text-slate-100 text-sm">-</p>
+                    <p id="depositTargetText" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Sisa target: Rp 0</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nominal Disetorkan Hari Ini (Rp) *</label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" id="depositAmount" required min="1" class="w-full pl-9 pr-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex gap-2 pt-1">
+                    <button type="button" onclick="quickFillDeposit()" class="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 text-xs font-semibold rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition">
+                        Penuh Target Harian
+                    </button>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeDepositModal()" class="w-1/2 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition">
+                        Simpan Setoran
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Alarm & Notifikasi -->
+    <div id="notificationModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-bell text-amber-500"></i> Pengaturan Alarm & Notifikasi
+                </h3>
+                <button onclick="closeNotificationModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 mt-4">
+                <!-- Status Izin Notifikasi Browser -->
+                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200">Izin Push Notification</h4>
+                        <p id="notifPermissionStatus" class="text-[11px] text-slate-500">Memeriksa izin...</p>
+                    </div>
+                    <button onclick="requestNotifPermission()" id="reqNotifBtn" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg text-xs transition">
+                        Aktifkan
+                    </button>
+                </div>
+
+                <!-- Setting Jam Alarm -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Jam Alarm Pengingat Harian</label>
+                    <div class="flex gap-2">
+                        <input type="time" id="alarmTimeInput" class="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <button onclick="saveAlarmSettings()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition whitespace-nowrap">
+                            Simpan Jam
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-400 mt-1">Saat waktu ini tiba setiap hari, alarm suara dan push notification akan muncul.</p>
+                </div>
+
+                <!-- Test Sound Button -->
+                <div class="pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200">Suara Alarm Sintesis</h4>
+                        <p class="text-[11px] text-slate-500">Menggunakan Web Audio API (tanpa file eksternal)</p>
+                    </div>
+                    <button onclick="playAlarmSound()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-lg text-xs flex items-center gap-1.5 transition">
+                        <i class="fa-solid fa-volume-high"></i> Tes Suara
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Data Backup / Restore -->
+    <div id="backupModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-200">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-700">
+                <h3 class="font-bold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-emerald-600"></i> Backup & Restore Data
+                </h3>
+                <button onclick="closeBackupModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 mt-4">
+                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200 mb-1">Export Data (Backup)</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2">Simpan seluruh data tagihan dan riwayat tabungan Anda sebagai file JSON.</p>
+                    <button onclick="exportJSON()" class="w-full py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-semibold rounded-lg text-xs flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-download"></i> Unduh File Backup (.json)
+                    </button>
+                </div>
+
+                <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <h4 class="font-bold text-xs text-slate-800 dark:text-slate-200 mb-1">Import Data (Restore)</h4>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2">Muat ulang data dari file backup JSON sebelumnya.</p>
+                    <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="importJSON(event)">
+                    <button onclick="document.getElementById('importFileInput').click()" class="w-full py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-100 font-semibold rounded-lg text-xs flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-upload"></i> Pilih File JSON
+                    </button>
+                </div>
+
+                <div class="p-3 bg-red-50 dark:bg-red-950/30 rounded-xl border border-red-200 dark:border-red-900/50">
+                    <h4 class="font-bold text-xs text-red-700 dark:text-red-400 mb-1">Reset Ke Data Contoh</h4>
+                    <p class="text-[11px] text-red-600/80 dark:text-red-300 mb-2">Kembalikan data ke contoh awal jika ingin memulai dari baru.</p>
+                    <button onclick="resetToDemoData()" class="w-full py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-xs flex items-center justify-center gap-2 transition">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Data Contoh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Box -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none text-xs font-medium">
+        <i id="toastIcon" class="fa-solid fa-check-circle text-emerald-400 text-base"></i>
+        <span id="toastMessage">Pesan Notifikasi</span>
+    </div>
+
+    <script>
+        /* ==========================================================================
+           1. INITIALIZATION & STATE MANAGEMENT
+           ========================================================================== */
+        const STORAGE_KEY = 'tabung_rutin_items_v2';
+        const SETTINGS_KEY = 'tabung_rutin_settings_v2';
+        const THEME_KEY = 'tabung_rutin_theme';
+
+        let items = [];
+        let settings = {
+            alarmTime: "07:00",
+            lastAlarmTriggeredDate: ""
+        };
+        let sortKey = 'dueDate';
+        let chartInstance = null;
+        let deferredPrompt = null;
+        let activeDepositItemId = null;
+
+        // Sample Demo Data
+        const demoData = [
+            {
+                id: '1',
+                title: 'Listrik & Air PLN',
+                amount: 600000,
+                savedAmount: 300000,
+                dueDate: getRelativeDate(10), // 10 hari lagi
+                frequency: '30',
+                customDays: null,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: '2',
+                title: 'Pajak Motor / Mobil',
+                amount: 2190000,
+                savedAmount: 500000,
+                dueDate: getRelativeDate(45),
+                frequency: '365',
+                customDays: null,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: '3',
+                title: 'Arisan Mingguan RT',
+                amount: 140000,
+                savedAmount: 140000,
+                dueDate: getRelativeDate(0), // Hari ini (due today!)
+                frequency: '7',
+                customDays: null,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: '4',
+                title: 'Domain & Cloud Hosting',
+                amount: 500000,
+                savedAmount: 100000,
+                dueDate: getRelativeDate(20),
+                frequency: 'CUSTOM',
+                customDays: 100,
+                createdAt: new Date().toISOString()
+            }
+        ];
+
+        function getRelativeDate(daysFromNow) {
+            const d = new Date();
+            d.setDate(d.getDate() + daysFromNow);
+            return d.toISOString().split('T')[0];
+        }
+
+        /* ==========================================================================
+           2. DOM CONTENT LOADED & INITIALSETUP
+           ========================================================================== */
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadSettings();
+            loadItems();
+            initChart();
+            renderApp();
+            registerPWA();
+            startAlarmLoop();
+
+            // Realtime Form Event Listeners
+            document.getElementById('itemAmount').addEventListener('input', updateFormPreview);
+            document.getElementById('itemSavedAmount').addEventListener('input', updateFormPreview);
+            document.getElementById('itemDueDate').addEventListener('change', updateFormPreview);
+            document.getElementById('itemFrequency').addEventListener('change', updateFormPreview);
+            document.getElementById('itemCustomDays').addEventListener('input', updateFormPreview);
+        });
+
+        /* ==========================================================================
+           3. DATA & CALCULATIONS ENGINE
+           ========================================================================== */
+        function loadItems() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    items = JSON.parse(stored);
+                } catch (e) {
+                    items = demoData;
+                }
+            } else {
+                items = demoData;
+                saveItems();
+            }
+        }
+
+        function saveItems() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+        }
+
+        function loadSettings() {
+            const stored = localStorage.getItem(SETTINGS_KEY);
+            if (stored) {
+                try {
+                    settings = { ...settings, ...JSON.parse(stored) };
+                } catch(e) {}
+            }
+            document.getElementById('alarmTimeDisplay').innerText = settings.alarmTime;
+            document.getElementById('alarmTimeInput').value = settings.alarmTime;
+            updatePermissionUI();
+        }
+
+        function saveSettings() {
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            document.getElementById('alarmTimeDisplay').innerText = settings.alarmTime;
+        }
+
+        /**
+         * Dynamic Days Remaining & Daily Target Formula:
+         * Sisa Hari = Target Due Date - Current Date (min 1 hari untuk pembagi)
+         * Dynamic Daily Target = (Total Estimasi - Dana Terkumpul) / Sisa Hari
+         */
+        function calculateItemMetrics(item) {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            const due = new Date(item.dueDate);
+            due.setHours(0,0,0,0);
+
+            const diffTime = due - today;
+            const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            const totalNeeded = item.amount;
+            const currentSaved = item.savedAmount || 0;
+            const remainingTarget = Math.max(0, totalNeeded - currentSaved);
+
+            let dailyTarget = 0;
+            if (remainingTarget > 0) {
+                if (daysRemaining <= 0) {
+                    // Due today or overdue -> needs all remaining balance today
+                    dailyTarget = remainingTarget;
+                } else {
+                    dailyTarget = Math.ceil(remainingTarget / daysRemaining);
+                }
+            }
+
+            const progressPct = Math.min(100, Math.round((currentSaved / totalNeeded) * 100));
+
+            return {
+                daysRemaining,
+                remainingTarget,
+                dailyTarget,
+                progressPct,
+                isFull: currentSaved >= totalNeeded
+            };
+        }
+
+        /**
+         * Calculate Next Due Date when rolling over cycles
+         */
+        function calculateNextDueDate(currentDueDateStr, frequency, customDays) {
+            let current = new Date(currentDueDateStr);
+            if (isNaN(current.getTime())) current = new Date();
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
+
+            // If current due date was already in the past, roll forward starting from today
+            let baseDate = current < today ? today : current;
+
+            let nextDate = new Date(baseDate);
+
+            switch(frequency) {
+                case '1': // Harian
+                    nextDate.setDate(nextDate.getDate() + 1);
+                    break;
+                case '7': // Mingguan
+                    nextDate.setDate(nextDate.getDate() + 7);
+                    break;
+                case '30': // Bulanan
+                    nextDate.setMonth(nextDate.getMonth() + 1);
+                    break;
+                case '365': // Tahunan
+                    nextDate.setFullYear(nextDate.getFullYear() + 1);
+                    break;
+                case 'CUSTOM': // Custom N Days
+                    const days = parseInt(customDays, 10) || 1;
+                    nextDate.setDate(nextDate.getDate() + days);
+                    break;
+                default:
+                    nextDate.setMonth(nextDate.getMonth() + 1);
+            }
+
+            return nextDate.toISOString().split('T')[0];
+        }
+
+        /* ==========================================================================
+           4. MAIN RENDER APP
+           ========================================================================== */
+        function renderApp() {
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const filterFreq = document.getElementById('filterFrequency').value;
+
+            // Filter
+            let filtered = items.filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(searchVal);
+                const matchesFreq = (filterFreq === 'ALL') || (item.frequency === filterFreq);
+                return matchesSearch && matchesFreq;
+            });
+
+            // Sort
+            filtered.sort((a, b) => {
+                if (sortKey === 'dueDate') {
+                    return new Date(a.dueDate) - new Date(b.dueDate);
+                } else if (sortKey === 'dailyAmount') {
+                    const metricsA = calculateItemMetrics(a);
+                    const metricsB = calculateItemMetrics(b);
+                    return metricsB.dailyTarget - metricsA.dailyTarget;
+                }
+                return 0;
+            });
+
+            // Calculate Overall Summary Metrics
+            let totalDailyNeeded = 0;
+            let totalEstAmount = 0;
+            let totalCollected = 0;
+            let dueTodayCount = 0;
+            let urgentItems = [];
+
+            items.forEach(item => {
+                const metrics = calculateItemMetrics(item);
+                totalDailyNeeded += metrics.dailyTarget;
+                totalEstAmount += item.amount;
+                totalCollected += (item.savedAmount || 0);
+
+                if (metrics.daysRemaining <= 0) {
+                    dueTodayCount++;
+                    urgentItems.push({ ...item, metrics });
+                }
+            });
+
+            // Update UI Metric Cards
+            document.getElementById('totalDailySavings').innerText = formatRp(totalDailyNeeded);
+            document.getElementById('totalEstimation').innerText = formatRp(totalEstAmount);
+            document.getElementById('totalCollectedAmount').innerText = formatRp(totalCollected);
+            document.getElementById('dueTodayCount').innerText = `${dueTodayCount} Tagihan`;
+            document.getElementById('totalItems').innerText = `${items.length} Item`;
+            document.getElementById('filteredCountBadge').innerText = `${filtered.length} Tagihan`;
+
+            // Update Urgent Banner
+            const urgentContainer = document.getElementById('urgentAlertContainer');
+            if (urgentItems.length > 0) {
+                urgentContainer.classList.remove('hidden');
+                document.getElementById('urgentAlertText').innerHTML = `
+                    Ada <strong>${urgentItems.length} tagihan</strong> yang telah tiba tanggal jatuh tempo!
+                    ${urgentItems.map(i => `<u>${i.title}</u>`).join(', ')}. Segera lakukan pembayaran dan lunasi untuk memperbarui siklus.
+                `;
+            } else {
+                urgentContainer.classList.add('hidden');
+            }
+
+            // Render Payment Items Cards
+            const listEl = document.getElementById('paymentList');
+            const emptyEl = document.getElementById('emptyState');
+            listEl.innerHTML = '';
+
+            if (filtered.length === 0) {
+                emptyEl.classList.remove('hidden');
+            } else {
+                emptyEl.classList.add('hidden');
+
+                filtered.forEach(item => {
+                    const metrics = calculateItemMetrics(item);
+                    
+                    let statusBadgeClass = "bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300";
+                    let statusBadgeText = `${metrics.daysRemaining} Hari Lagi (${formatDateID(item.dueDate)})`;
+
+                    if (metrics.isFull) {
+                        statusBadgeClass = "bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold";
+                        statusBadgeText = "Tabungan Lunas 100%";
+                    } else if (metrics.daysRemaining < 0) {
+                        statusBadgeClass = "bg-red-500 text-white font-bold animate-pulse";
+                        statusBadgeText = `Terlewat ${Math.abs(metrics.daysRemaining)} Hari!`;
+                    } else if (metrics.daysRemaining === 0) {
+                        statusBadgeClass = "bg-amber-500 text-white font-bold";
+                        statusBadgeText = "Jatuh Tempo HARI INI!";
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = `bg-white dark:bg-slate-800 p-4 rounded-2xl border ${metrics.daysRemaining <= 0 ? 'border-amber-400 dark:border-amber-500/60 shadow-md ring-1 ring-amber-400/30' : 'border-slate-200/80 dark:border-slate-700/80'} shadow-sm space-y-3`;
+
+                    card.innerHTML = `
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="flex items-start gap-3">
+                                <div class="w-10 h-10 rounded-xl ${metrics.isFull ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40' : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'} flex items-center justify-center text-lg font-bold flex-shrink-0 mt-0.5">
+                                    <i class="fa-solid ${metrics.isFull ? 'fa-check-circle text-emerald-500' : 'fa-receipt'}"></i>
+                                </div>
+                                <div>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <h4 class="font-bold text-slate-800 dark:text-slate-100 text-sm sm:text-base">${escapeHTML(item.title)}</h4>
+                                        <span class="text-[10px] px-2.5 py-0.5 rounded-full font-medium ${statusBadgeClass}">
+                                            ${statusBadgeText}
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                        Siklus: <span class="font-medium">${getFrequencyLabel(item.frequency, item.customDays)}</span> • Total Target: <strong class="text-slate-700 dark:text-slate-200">${formatRp(item.amount)}</strong>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 dark:border-slate-700/50">
+                                <div class="text-left sm:text-right">
+                                    <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold block">Target Harian (Presisi)</span>
+                                    <span class="text-base font-extrabold text-emerald-600 dark:text-emerald-400">${formatRp(metrics.dailyTarget)}<span class="text-xs text-slate-400 font-normal">/hr</span></span>
+                                </div>
+
+                                <div class="flex items-center gap-1">
+                                    <button onclick="editItem('${item.id}')" class="p-2 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Edit">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button onclick="deleteItem('${item.id}')" class="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="Hapus">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar & Savings Deposit Controls -->
+                        <div class="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-700/60 space-y-2">
+                            <div class="flex items-center justify-between text-xs">
+                                <span class="text-slate-600 dark:text-slate-300 font-medium">
+                                    Terkumpul: <strong class="text-emerald-600 dark:text-emerald-400">${formatRp(item.savedAmount || 0)}</strong> / ${formatRp(item.amount)}
+                                </span>
+                                <span class="font-bold text-slate-700 dark:text-slate-300">${metrics.progressPct}%</span>
+                            </div>
+
+                            <div class="w-full bg-slate-200 dark:bg-slate-700 h-2.5 rounded-full overflow-hidden">
+                                <div class="bg-emerald-500 h-full rounded-full transition-all duration-500" style="width: ${metrics.progressPct}%"></div>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2 pt-1">
+                                <button onclick="openDepositModal('${item.id}')" class="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+                                    <i class="fa-solid fa-plus text-[10px]"></i> Setor Tabungan
+                                </button>
+
+                                <button onclick="rolloverPaymentCycle('${item.id}')" class="text-xs px-3 py-1.5 ${metrics.isFull ? 'bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-md' : 'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 text-slate-700 dark:text-slate-200 font-medium'} rounded-lg flex items-center gap-1.5 transition" title="Tandai Sudah Lunas & Lanjut Siklus Berikutnya">
+                                    <i class="fa-solid fa-rotate-right text-[10px]"></i> Pelunasan & Siklus Baru
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    listEl.appendChild(card);
+                });
+            }
+
+            updateChart(filtered);
+        }
+
+        /* ==========================================================================
+           5. CYCLE ROLLOVER & SAVINGS ACTIONS
+           ========================================================================== */
+        /**
+         * Roll over payment cycle automatically or manually when paid
+         */
+        function rolloverPaymentCycle(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            const metrics = calculateItemMetrics(item);
+            const nextDueDate = calculateNextDueDate(item.dueDate, item.frequency, item.customDays);
+
+            let confirmMsg = `Konfirmasi pelunasan tagihan "${item.title}"?\n\n- Tanggal Jatuh Tempo Baru: ${formatDateID(nextDueDate)}\n`;
+            if (item.savedAmount > item.amount) {
+                const excess = item.savedAmount - item.amount;
+                confirmMsg += `- Kelebihan dana Rp ${formatRp(excess)} akan dialokasikan ke siklus berikutnya.`;
+            } else {
+                confirmMsg += `- Dana tabungan akan direset menjadi Rp 0 untuk siklus baru.`;
+            }
+
+            if (confirm(confirmMsg)) {
+                // Excess balance carrying over
+                const excess = Math.max(0, (item.savedAmount || 0) - item.amount);
+                item.dueDate = nextDueDate;
+                item.savedAmount = excess;
+
+                saveItems();
+                renderApp();
+                showToast(`Tagihan "${item.title}" dilunasi! Tanggal baru: ${formatDateID(nextDueDate)}`);
+            }
+        }
+
+        function openDepositModal(id) {
+            const item = items.find(i => i.id === id);
+            if (!item) return;
+
+            activeDepositItemId = id;
+            const metrics = calculateItemMetrics(item);
+
+            document.getElementById('depositItemId').value = id;
+            document.getElementById('depositItemTitle').innerText = item.title;
+            document.getElementById('depositTargetText').innerText = `Sisa target total: ${formatRp(metrics.remainingTarget)} | Target harian: ${formatRp(metrics.dailyTarget)}`;
+            document.getElementById('depositAmount').value = metrics.dailyTarget > 0 ? metrics.dailyTarget : metrics.remainingTarget;
+
+            const modal = document.getElementById('depositModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.firstElementChild.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeDepositModal() {
+            const modal = document.getElementById('depositModal');
+            modal.classList.add('opacity-0');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function quickFillDeposit() {
+            const item = items.find(i => i.id === activeDepositItemId);
+            if (item) {
+                const metrics = calculateItemMetrics(item);
+                document.getElementById('depositAmount').value = metrics.dailyTarget;
+            }
+        }
+
+        function handleDepositSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('depositItemId').value;
+            const depositVal = parseFloat(document.getElementById('depositAmount').value) || 0;
+
+            const item = items.find(i => i.id === id);
+            if (item && depositVal > 0) {
+                item.savedAmount = (item.savedAmount || 0) + depositVal;
+                saveItems();
+                renderApp();
+                closeDepositModal();
+                showToast(`Berhasil menyetor ${formatRp(depositVal)} ke ${item.title}`);
+            }
+        }
+
+        /* ==========================================================================
+           6. FORM MODAL & ACTIONS
+           ========================================================================== */
+        function openFormModal(editId = null) {
+            const modal = document.getElementById('formModal');
+            const form = document.getElementById('paymentForm');
+
+            form.reset();
+            document.getElementById('itemId').value = '';
+            document.getElementById('customDaysWrapper').classList.add('hidden');
+            document.getElementById('previewDailyAmount').innerText = 'Rp 0';
+
+            if (editId) {
+                const item = items.find(i => i.id === editId);
+                if (item) {
+                    document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-pen-to-square text-emerald-600"></i> Edit Tagihan`;
+                    document.getElementById('itemId').value = item.id;
+                    document.getElementById('itemTitle').value = item.title;
+                    document.getElementById('itemAmount').value = item.amount;
+                    document.getElementById('itemSavedAmount').value = item.savedAmount || 0;
+                    document.getElementById('itemDueDate').value = item.dueDate;
+                    document.getElementById('itemFrequency').value = item.frequency;
+
+                    if (item.frequency === 'CUSTOM') {
+                        document.getElementById('customDaysWrapper').classList.remove('hidden');
+                        document.getElementById('itemCustomDays').value = item.customDays || 1;
+                    }
+                    updateFormPreview();
+                }
+            } else {
+                document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-plus-circle text-emerald-600"></i> Tambah Tagihan`;
+                document.getElementById('itemDueDate').value = new Date().toISOString().split('T')[0];
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.firstElementChild.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeFormModal() {
+            const modal = document.getElementById('formModal');
+            modal.classList.add('opacity-0');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function toggleCustomDaysInput() {
+            const freq = document.getElementById('itemFrequency').value;
+            const customWrapper = document.getElementById('customDaysWrapper');
+            if (freq === 'CUSTOM') {
+                customWrapper.classList.remove('hidden');
+                document.getElementById('itemCustomDays').required = true;
+            } else {
+                customWrapper.classList.add('hidden');
+                document.getElementById('itemCustomDays').required = false;
+            }
+            updateFormPreview();
+        }
+
+        function updateFormPreview() {
+            const amount = parseFloat(document.getElementById('itemAmount').value) || 0;
+            const saved = parseFloat(document.getElementById('itemSavedAmount').value) || 0;
+            const dueDateStr = document.getElementById('itemDueDate').value;
+            const freq = document.getElementById('itemFrequency').value;
+            const customDays = document.getElementById('itemCustomDays').value;
+
+            const tempItem = { amount, savedAmount: saved, dueDate: dueDateStr, frequency: freq, customDays };
+            const metrics = calculateItemMetrics(tempItem);
+
+            document.getElementById('previewDailyAmount').innerText = formatRp(metrics.dailyTarget);
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('itemId').value;
+            const title = document.getElementById('itemTitle').value.trim();
+            const amount = parseFloat(document.getElementById('itemAmount').value);
+            const savedAmount = parseFloat(document.getElementById('itemSavedAmount').value) || 0;
+            const dueDate = document.getElementById('itemDueDate').value;
+            const frequency = document.getElementById('itemFrequency').value;
+            const customDays = frequency === 'CUSTOM' ? parseInt(document.getElementById('itemCustomDays').value, 10) : null;
+
+            if (id) {
+                const index = items.findIndex(i => i.id === id);
+                if (index !== -1) {
+                    items[index] = { ...items[index], title, amount, savedAmount, dueDate, frequency, customDays };
+                    showToast('Tagihan berhasil diperbarui');
+                }
+            } else {
+                const newItem = {
+                    id: Date.now().toString(),
+                    title,
+                    amount,
+                    savedAmount,
+                    dueDate,
+                    frequency,
+                    customDays,
+                    createdAt: new Date().toISOString()
+                };
+                items.push(newItem);
+                showToast('Tagihan baru ditambahkan');
+            }
+
+            saveItems();
+            renderApp();
+            closeFormModal();
+        }
+
+        function editItem(id) {
+            openFormModal(id);
+        }
+
+        function deleteItem(id) {
+            if (confirm('Apakah Anda yakin ingin menghapus tagihan ini?')) {
+                items = items.filter(i => i.id !== id);
+                saveItems();
+                renderApp();
+                showToast('Tagihan berhasil dihapus', 'danger');
+            }
+        }
+
+        function setSort(key) {
+            sortKey = key;
+            const dueDateBtn = document.getElementById('sortDueDateBtn');
+            const dailyBtn = document.getElementById('sortDailyBtn');
+
+            if (key === 'dueDate') {
+                dueDateBtn.className = "px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-800";
+                dailyBtn.className = "px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold";
+            } else {
+                dailyBtn.className = "px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-200 dark:border-emerald-800";
+                dueDateBtn.className = "px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold";
+            }
+            renderApp();
+        }
+
+        /* ==========================================================================
+           7. ALARM & WEB NOTIFICATIONS ENGINE
+           ========================================================================== */
+        function openNotificationModal() {
+            updatePermissionUI();
+            const modal = document.getElementById('notificationModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.firstElementChild.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeNotificationModal() {
+            const modal = document.getElementById('notificationModal');
+            modal.classList.add('opacity-0');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function updatePermissionUI() {
+            const statusText = document.getElementById('notifPermissionStatus');
+            const reqBtn = document.getElementById('reqNotifBtn');
+
+            if (!('Notification' in window)) {
+                statusText.innerText = "Browser ini tidak mendukung Web Notifications.";
+                reqBtn.classList.add('hidden');
+                return;
+            }
+
+            if (Notification.permission === 'granted') {
+                statusText.innerText = "Izin Aktif. Notifikasi siap dimunculkan.";
+                reqBtn.classList.add('hidden');
+            } else if (Notification.permission === 'denied') {
+                statusText.innerText = "Izin Ditolak. Harap izinkan lewat pengaturan browser.";
+                reqBtn.classList.add('hidden');
+            } else {
+                statusText.innerText = "Izin Belum Diberikan.";
+                reqBtn.classList.remove('hidden');
+            }
+        }
+
+        function requestNotifPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(() => {
+                    updatePermissionUI();
+                });
+            }
+        }
+
+        function saveAlarmSettings() {
+            const timeVal = document.getElementById('alarmTimeInput').value;
+            if (timeVal) {
+                settings.alarmTime = timeVal;
+                saveSettings();
+                showToast(`Jam alarm disimpan: ${timeVal}`);
+                closeNotificationModal();
+            }
+        }
+
+        // Web Audio API Synthesized Chime/Alarm Sound
+        function playAlarmSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+
+                // Melodic multi-tone chime sequence
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.value = freq;
+
+                    const startTime = ctx.currentTime + (idx * 0.15);
+                    gain.gain.setValueAtTime(0.3, startTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(startTime);
+                    osc.stop(startTime + 0.4);
+                });
+            } catch (e) {
+                console.error("Gagal memainkan suara sintetis Web Audio API", e);
+            }
+        }
+
+        function triggerManualAlarmCheck() {
+            playAlarmSound();
+            fireAlarmNotification(true);
+        }
+
+        function startAlarmLoop() {
+            // Check every 30 seconds for scheduled alarm time
+            setInterval(() => {
+                checkAlarmSchedule();
+            }, 30000);
+
+            // Immediate check on load
+            checkAlarmSchedule();
+        }
+
+        function checkAlarmSchedule() {
+            const now = new Date();
+            const currentHM = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const todayStr = now.toISOString().split('T')[0];
+
+            if (currentHM === settings.alarmTime && settings.lastAlarmTriggeredDate !== todayStr) {
+                settings.lastAlarmTriggeredDate = todayStr;
+                saveSettings();
+
+                playAlarmSound();
+                fireAlarmNotification(false);
+            }
+        }
+
+        function fireAlarmNotification(isManualTest = false) {
+            let totalDailyNeeded = 0;
+            let dueTodayCount = 0;
+
+            items.forEach(item => {
+                const metrics = calculateItemMetrics(item);
+                totalDailyNeeded += metrics.dailyTarget;
+                if (metrics.daysRemaining <= 0) dueTodayCount++;
+            });
+
+            const title = isManualTest ? "🔔 Tes Alarm TabungRutin" : "⏰ Pengingat Tabungan Harian Anda!";
+            const body = `Hari ini Anda perlu menabung ${formatRp(totalDailyNeeded)} untuk ${items.length} tagihan, dan ada ${dueTodayCount} tagihan yang jatuh tempo!`;
+
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: 'https://cdn-icons-png.flaticon.com/512/2953/2953361.png'
+                });
+            } else {
+                showToast(body);
+            }
+        }
+
+        /* ==========================================================================
+           8. BACKUP & DEMO
+           ========================================================================== */
+        function openBackupModal() {
+            const modal = document.getElementById('backupModal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.firstElementChild.classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeBackupModal() {
+            const modal = document.getElementById('backupModal');
+            modal.classList.add('opacity-0');
+            modal.firstElementChild.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(items, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `TabungRutin_Backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('File backup JSON diunduh');
+        }
+
+        function importJSON(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const imported = JSON.parse(evt.target.result);
+                    if (Array.isArray(imported)) {
+                        items = imported;
+                        saveItems();
+                        renderApp();
+                        closeBackupModal();
+                        showToast('Data berhasil di-restore');
+                    } else {
+                        alert('Format file JSON tidak valid!');
+                    }
+                } catch (err) {
+                    alert('Gagal membaca file JSON!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetToDemoData() {
+            if (confirm('Aksi ini akan mengganti data saat ini dengan data contoh. Lanjutkan?')) {
+                items = demoData;
+                saveItems();
+                renderApp();
+                closeBackupModal();
+                showToast('Data direset ke contoh');
+            }
+        }
+
+        /* ==========================================================================
+           9. CHART.JS INTEGRATION
+           ========================================================================== */
+        function initChart() {
+            const ctx = document.getElementById('savingsChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', 
+                            '#ec4899', '#06b6d4', '#64748b'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${formatRp(context.raw)}/hr`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        function updateChart(itemList) {
+            if (!chartInstance) return;
+
+            const topItems = [...itemList]
+                .map(i => {
+                    const metrics = calculateItemMetrics(i);
+                    return {
+                        title: i.title,
+                        daily: metrics.dailyTarget
+                    };
+                })
+                .sort((a,b) => b.daily - a.daily)
+                .slice(0, 5);
+
+            chartInstance.data.labels = topItems.map(i => i.title);
+            chartInstance.data.datasets[0].data = topItems.map(i => i.daily);
+            chartInstance.update();
+        }
+
+        /* ==========================================================================
+           10. PWA REGISTRATION
+           ========================================================================== */
+        function registerPWA() {
+            const manifest = {
+                name: "TabungRutin - Smart Payment & Savings Manager",
+                short_name: "TabungRutin",
+                description: "Sistem pengingat pembayaran dan kalkulator tabungan harian.",
+                start_url: "./",
+                display: "standalone",
+                background_color: "#0f172a",
+                theme_color: "#059669",
+                icons: [
+                    {
+                        src: "https://cdn-icons-png.flaticon.com/512/2953/2953361.png",
+                        sizes: "512x512",
+                        type: "image/png"
+                    }
+                ]
+            };
+
+            const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+            const manifestURL = URL.createObjectURL(manifestBlob);
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestURL;
+            document.head.appendChild(link);
+
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'tabung-rutin-v2';
+                    self.addEventListener('install', (e) => {
+                        e.waitUntil(
+                            caches.open(CACHE_NAME).then((cache) => cache.addAll(['./']))
+                        );
+                    });
+                    self.addEventListener('fetch', (e) => {
+                        e.respondWith(
+                            caches.match(e.request).then((res) => res || fetch(e.request))
+                        );
+                    });
+                `;
+
+                const swBlob = new Blob([swCode], { type: 'text/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+
+                navigator.serviceWorker.register(swUrl)
+                    .then(() => console.log('PWA Registered'))
+                    .catch(err => console.log('SW Error:', err));
+            }
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                const pwaBtn = document.getElementById('pwaInstallBtn');
+                if (pwaBtn) pwaBtn.classList.remove('hidden');
+            });
+        }
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        document.getElementById('pwaInstallBtn').classList.add('hidden');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        }
+
+        /* ==========================================================================
+           11. GENERAL UTILITIES
+           ========================================================================== */
+        function formatRp(num) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                maximumFractionDigits: 0
+            }).format(num);
+        }
+
+        function formatDateID(dateStr) {
+            if (!dateStr) return '';
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            return new Date(dateStr).toLocaleDateString('id-ID', options);
+        }
+
+        function getFrequencyLabel(frequency, customDays) {
+            switch(frequency) {
+                case '365': return 'Tahunan (1 Thn)';
+                case '30': return 'Bulanan (1 Bln)';
+                case '7': return 'Mingguan (1 Mgg)';
+                case '1': return 'Harian';
+                case 'CUSTOM': return `Custom (${customDays || 1} Hr)`;
+                default: return 'Siklus';
+            }
+        }
+
+        function scrollToUrgent() {
+            window.scrollTo({ top: 300, behavior: 'smooth' });
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastMsg.innerText = message;
+            if (type === 'danger') {
+                toastIcon.className = "fa-solid fa-circle-exclamation text-red-400 text-base";
+            } else {
+                toastIcon.className = "fa-solid fa-check-circle text-emerald-400 text-base";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function initTheme() {
+            const isDark = localStorage.getItem(THEME_KEY) === 'dark';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon';
+            }
+        }
+
+        function toggleDarkMode() {
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem(THEME_KEY, 'light');
+                icon.className = 'fa-solid fa-moon';
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem(THEME_KEY, 'dark');
+                icon.className = 'fa-solid fa-sun';
+            }
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+    </script>
+</body>
+</html>
